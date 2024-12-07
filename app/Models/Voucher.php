@@ -46,6 +46,10 @@ class Voucher extends Model
         'total_amount',
         'xml_content',
         'user_id',
+        'serie',
+        'numero',
+        'tipo_comprobante',
+        'moneda'
     ];
 
     protected $casts = [

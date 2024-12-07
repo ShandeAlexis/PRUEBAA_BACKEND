@@ -22,6 +22,12 @@ return new class extends Migration
             $table->string('receiver_document_number');
             $table->decimal('total_amount');
             $table->longText('xml_content');
+            
+            $table->string('serie')->nullable();
+            $table->string('numero')->nullable();
+            $table->string('tipo_comprobante')->nullable();
+            $table->string('moneda')->nullable(); 
+
             $table->timestamps();
             $table->softDeletes();
         });
