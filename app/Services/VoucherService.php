@@ -92,7 +92,6 @@ class VoucherService
         return $voucher;
     }
     /**
-     * Obtener los montos totales acumulados por moneda (Soles y Dólares)
      * @param User $user
      * @return array
      */
@@ -136,6 +135,6 @@ class VoucherService
             throw new ModelNotFoundException('El comprobante no existe o no pertenece al usuario.');
         }
 
-        return $voucher->delete();
+        return $voucher->forceDelete();
     }
 }
