@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Events\Vouchers\VouchersCreated;
+use App\Jobs\ProcesarVouchers;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
@@ -28,7 +29,7 @@ class VoucherService
             $vouchers[] = $this->storeVoucherFromXmlContent($xmlContent, $user);
         }
 
-        VouchersCreated::dispatch($vouchers, $user);
+        dispatch(new ProcesarVouchers($vouchers, $user));
 
         return $vouchers;
     }
