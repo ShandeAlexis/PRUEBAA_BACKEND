@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\User\MonedaMontoController;
 use App\Http\Controllers\Vouchers\GetVouchersHandler;
 use App\Http\Controllers\Vouchers\StoreVouchersHandler;
 use Illuminate\Support\Facades\Route;

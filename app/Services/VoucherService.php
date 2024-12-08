@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use SimpleXMLElement;
 
 class VoucherService
@@ -88,5 +89,32 @@ class VoucherService
         }
 
         return $voucher;
+    }
+    /**
+     * Obtener los montos totales acumulados por moneda (Soles y Dólares)
+     * @param User $user
+     * @return array
+     */
+    public function getTotalAmountsByCurrency(User $user): array
+    {
+        $totals = Voucher::where('user_id', $user->id)
+            ->select(DB::raw('moneda, SUM(total_amount) as total_amount'))
+            ->groupBy('moneda')
+            ->get();
+
+        $result = [
+            'PEN' => 0,
+            'USD' => 0,
+        ];
+
+        foreach ($totals as $total) {
+            if ($total->moneda === 'PEN') {
+                $result['PEN'] = (float) $total->total_amount;
+            } elseif ($total->moneda === 'USD') {
+                $result['USD'] = (float) $total->total_amount;
+            }
+        }
+
+        return $result;
     }
 }
