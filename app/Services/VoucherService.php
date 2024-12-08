@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use SimpleXMLElement;
 
@@ -116,5 +117,25 @@ class VoucherService
         }
 
         return $result;
+    }
+
+
+    /**
+     * @param string $id
+     * @param User $user
+     * @return bool
+     * @throws ModelNotFoundException
+     */
+    public function deleteVoucherById(string $id, User $user): bool
+    {
+        $voucher = Voucher::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$voucher) {
+            throw new ModelNotFoundException('El comprobante no existe o no pertenece al usuario.');
+        }
+
+        return $voucher->delete();
     }
 }
