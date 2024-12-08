@@ -3,10 +3,14 @@
 namespace App\Services;
 
 use App\Events\Vouchers\VouchersCreated;
+use App\Jobs\ProcesarVouchers;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherLine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use SimpleXMLElement;
 
 class VoucherService
@@ -24,12 +28,11 @@ class VoucherService
     public function storeVouchersFromXmlContents(array $xmlContents, User $user): array
     {
         $vouchers = [];
+        dispatch(new ProcesarVouchers($xmlContents, $user));
         foreach ($xmlContents as $xmlContent) {
-            $vouchers[] = $this->storeVoucherFromXmlContent($xmlContent, $user);
+            $voucher = $this->storeVoucherFromXmlContent($xmlContent, $user);
+            $vouchers[] = $voucher;
         }
-
-        VouchersCreated::dispatch($vouchers, $user);
-
         return $vouchers;
     }
 
@@ -88,5 +91,92 @@ class VoucherService
         }
 
         return $voucher;
+    }
+    /**
+     * @param User $user
+     * @return array
+     */
+    public function getTotalAmountsByCurrency(User $user): array
+    {
+        $totals = Voucher::where('user_id', $user->id)
+            ->select(DB::raw('moneda, SUM(total_amount) as total_amount'))
+            ->groupBy('moneda')
+            ->get();
+
+        $result = [
+            'PEN' => 0,
+            'USD' => 0,
+        ];
+
+        foreach ($totals as $total) {
+            if ($total->moneda === 'PEN') {
+                $result['PEN'] = (float) $total->total_amount;
+            } elseif ($total->moneda === 'USD') {
+                $result['USD'] = (float) $total->total_amount;
+            }
+        }
+
+        return $result;
+    }
+
+
+    /**
+     * @param string $id
+     * @param User $user
+     * @return bool
+     * @throws ModelNotFoundException
+     */
+    public function deleteVoucherById(string $id, User $user): bool
+    {
+        $voucher = Voucher::where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$voucher) {
+            throw new ModelNotFoundException('El comprobante no existe o no pertenece al usuario.');
+        }
+
+        return $voucher->forceDelete();
+    }
+
+
+    /**
+     * @param array $filters
+     * @param int $page
+     * @param int $paginate
+     * @param User $user
+     * @return LengthAwarePaginator
+     */
+    public function getFilteredVouchers(array $filters, int $page, int $paginate, $user): LengthAwarePaginator
+    {
+        $query = Voucher::query();
+
+        $query->where('user_id', $user->id);
+
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $startDate = Carbon::parse($filters['start_date'])->startOfDay();
+            $endDate = Carbon::parse($filters['end_date'])->endOfDay();
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        } else {
+            throw new \InvalidArgumentException('El rango de fechas es obligatorio.');
+        }
+
+        if (!empty($filters['serie'])) {
+            $query->where('serie', $filters['serie']);
+        }
+
+        if (!empty($filters['numero'])) {
+            $query->where('numero', $filters['numero']);
+        }
+
+        if (!empty($filters['tipo_comprobante'])) {
+            $query->where('tipo_comprobante', $filters['tipo_comprobante']);
+        }
+
+        if (!empty($filters['moneda'])) {
+            $query->where('moneda', $filters['moneda']);
+        }
+
+        return $query->paginate(perPage: $paginate, page: $page);
     }
 }

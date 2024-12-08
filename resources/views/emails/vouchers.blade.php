@@ -6,6 +6,8 @@
 <body>
     <h1>Estimado {{ $user->name }},</h1>
     <p>Hemos recibido tus comprobantes con los siguientes detalles:</p>
+
+    <h3>Comprobantes Exitosos</h3>
     @foreach ($vouchers as $voucher)
     <ul>
         <li>Nombre del Emisor: {{ $voucher->issuer_name }}</li>
@@ -17,6 +19,15 @@
         <li>Monto Total: {{ $voucher->total_amount }}</li>
     </ul>
     @endforeach
+
+    <h3>Comprobantes Fallidos</h3>
+    @foreach ($vouchersFallidos as $fallido)
+    <ul>
+        <li>Error: {{ $fallido['error'] }}</li>
+        <li>XML Content: {{ $fallido['xmlContent'] }}</li>
+    </ul>
+    @endforeach
+
     <p>¡Gracias por usar nuestro servicio!</p>
 </body>
 </html>
