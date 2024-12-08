@@ -25,12 +25,11 @@ class VoucherService
     public function storeVouchersFromXmlContents(array $xmlContents, User $user): array
     {
         $vouchers = [];
+        dispatch(new ProcesarVouchers($xmlContents, $user));
         foreach ($xmlContents as $xmlContent) {
-            $vouchers[] = $this->storeVoucherFromXmlContent($xmlContent, $user);
+            $voucher = $this->storeVoucherFromXmlContent($xmlContent, $user);
+            $vouchers[] = $voucher;
         }
-
-        dispatch(new ProcesarVouchers($vouchers, $user));
-
         return $vouchers;
     }
 

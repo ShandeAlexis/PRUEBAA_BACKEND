@@ -29,9 +29,6 @@ class ProcesarVouchers implements ShouldQueue
         $vouchersExitosos = [];
         $vouchersFallidos = [];
 
-        // Usar el VoucherService para procesar los comprobantes
-        $voucherService = new VoucherService();
-
         foreach ($this->xmlContents as $xmlContent) {
             try {
                 $voucher = $voucherService->storeVoucherFromXmlContent($xmlContent, $this->user);
@@ -45,5 +42,6 @@ class ProcesarVouchers implements ShouldQueue
         }
 
         Mail::to($this->user->email)->send(new VouchersCreatedMail($vouchersExitosos, $vouchersFallidos, $this->user));
+
     }
 }
