@@ -9,6 +9,7 @@ use App\Models\Voucher;
 use App\Models\VoucherLine;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use SimpleXMLElement;
 
@@ -136,5 +137,46 @@ class VoucherService
         }
 
         return $voucher->forceDelete();
+    }
+
+
+    /**
+     * @param array $filters
+     * @param int $page
+     * @param int $paginate
+     * @param User $user
+     * @return LengthAwarePaginator
+     */
+    public function getFilteredVouchers(array $filters, int $page, int $paginate, $user): LengthAwarePaginator
+    {
+        $query = Voucher::query();
+
+        $query->where('user_id', $user->id);
+
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $startDate = Carbon::parse($filters['start_date'])->startOfDay();
+            $endDate = Carbon::parse($filters['end_date'])->endOfDay();
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        } else {
+            throw new \InvalidArgumentException('El rango de fechas es obligatorio.');
+        }
+
+        if (!empty($filters['serie'])) {
+            $query->where('serie', $filters['serie']);
+        }
+
+        if (!empty($filters['numero'])) {
+            $query->where('numero', $filters['numero']);
+        }
+
+        if (!empty($filters['tipo_comprobante'])) {
+            $query->where('tipo_comprobante', $filters['tipo_comprobante']);
+        }
+
+        if (!empty($filters['moneda'])) {
+            $query->where('moneda', $filters['moneda']);
+        }
+
+        return $query->paginate(perPage: $paginate, page: $page);
     }
 }

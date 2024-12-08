@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Vouchers;
 
-use App\Http\Requests\Vouchers\GetVouchersRequest;
-use App\Http\Resources\Vouchers\VoucherResource;
+
 use App\Services\VoucherService;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class GetVouchersHandler
 {
@@ -14,13 +13,30 @@ class GetVouchersHandler
     {
     }
 
-    public function __invoke(GetVouchersRequest $request): AnonymousResourceCollection
+   
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function __invoke(Request $request): JsonResponse
     {
-        $vouchers = $this->voucherService->getVouchers(
-            $request->query('page'),
-            $request->query('paginate'),
-        );
+        try {
+            $filters = $request->only(['serie', 'numero', 'tipo_comprobante', 'moneda', 'start_date', 'end_date']);
+            $page = $request->input('page', 1);
+            $paginate = $request->input('paginate', 10);
 
-        return VoucherResource::collection($vouchers);
+            $user = $request->user(); 
+            $vouchers = $this->voucherService->getFilteredVouchers($filters, $page, $paginate, $user);
+
+            return response()->json($vouchers, 200);
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 400);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'message' => 'Ocurrió un error al intentar filtrar los comprobantes.',
+            ], 500);
+        }
     }
 }
